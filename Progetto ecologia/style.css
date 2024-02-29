@@ -1,0 +1,14 @@
+body{
+    background-image: url(fiume.jpg);
+}
+
+table {
+    border-collapse: collapse;
+  }
+  
+  table, th, td {
+    border: 3px solid black;
+    padding: 8px;
+    background-image: url(bottiglia.jpg);
+  }
+  
