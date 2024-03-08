@@ -7,38 +7,39 @@ var score = 0;
 var currTile;
 var otherTile;
 
-
-window.onload = function() {
+window.onload = function () {
     startGame();
 
-    //1/10th of a second
-    window.setInterval(function(){
+    window.setInterval(function () {
         crushMateriali();
         slideMateriali();
         generaMateriali();
     }, 100);
-}
+};
 
 function randomMateriale() {
-    return materiali[Math.floor(Math.random() * materiali.length)]; //0 - 5.99
+    return materiali[Math.floor(Math.random() * materiali.length)];
 }
 
 function startGame() {
+    score = 0; // puntrggio 0
+    document.getElementById("score").innerText = score; 
+
     for (let r = 0; r < rows; r++) {
         let row = [];
         for (let c = 0; c < columns; c++) {
-            // <img id="0-0" src="./images/Red.png">
             let tile = document.createElement("img");
             tile.id = r.toString() + "-" + c.toString();
             tile.src = "./images/" + randomMateriale() + ".png";
 
-            //DRAG FUNCTIONALITY
-            tile.addEventListener("dragstart", dragStart); //click on a candy, initialize drag process
-            tile.addEventListener("dragover", dragOver);  //clicking on candy, moving mouse to drag the candy
-            tile.addEventListener("dragenter", dragEnter); //dragging candy onto another candy
-            tile.addEventListener("dragleave", dragLeave); //leave candy over another candy
-            tile.addEventListener("drop", dragDrop); //dropping a candy over another candy
-            tile.addEventListener("dragend", dragEnd); //after drag process completed, we swap materiali
+            // drag
+            tile.setAttribute("draggable", true);
+            tile.addEventListener("dragstart", dragStart);
+            tile.addEventListener("dragover", dragOver);
+            tile.addEventListener("dragenter", dragEnter);
+            tile.addEventListener("dragleave", dragLeave);
+            tile.addEventListener("drop", dragDrop);
+            tile.addEventListener("dragend", dragEnd);
 
             document.getElementById("board").append(tile);
             row.push(tile);
@@ -49,9 +50,9 @@ function startGame() {
     console.log(board);
 }
 
-function dragStart() {
-    //this refers to tile that was clicked on for dragging
+function dragStart(e) {
     currTile = this;
+    e.dataTransfer.setData("text/plain", null);
 }
 
 function dragOver(e) {
@@ -62,22 +63,21 @@ function dragEnter(e) {
     e.preventDefault();
 }
 
-function dragLeave() {
-
-}
+function dragLeave() {}
 
 function dragDrop() {
-    //this refers to the target tile that was dropped on
     otherTile = this;
+    swapTiles();
 }
 
-function dragEnd() {
+function dragEnd() {}
 
+function swapTiles() {
     if (currTile.src.includes("blank") || otherTile.src.includes("blank")) {
         return;
     }
 
-    let currCoords = currTile.id.split("-"); // id="0-0" -> ["0", "0"]
+    let currCoords = currTile.id.split("-");
     let r = parseInt(currCoords[0]);
     let c = parseInt(currCoords[1]);
 
@@ -85,13 +85,7 @@ function dragEnd() {
     let r2 = parseInt(otherCoords[0]);
     let c2 = parseInt(otherCoords[1]);
 
-    let moveLeft = c2 == c-1 && r == r2;
-    let moveRight = c2 == c+1 && r == r2;
-
-    let moveUp = r2 == r-1 && c == c2;
-    let moveDown = r2 == r+1 && c == c2;
-
-    let isAdjacent = moveLeft || moveRight || moveUp || moveDown;
+    let isAdjacent = Math.abs(r - r2) + Math.abs(c - c2) === 1;
 
     if (isAdjacent) {
         let currImg = currTile.src;
@@ -99,76 +93,110 @@ function dragEnd() {
         currTile.src = otherImg;
         otherTile.src = currImg;
 
-        let validMove = checkValid();
-        if (!validMove) {
-            let currImg = currTile.src;
-            let otherImg = otherTile.src;
-            currTile.src = otherImg;
-            otherTile.src = currImg;    
+        if (!checkValid()) {
+            currTile.src = currImg;
+            otherTile.src = otherImg;
         }
     }
 }
 
 function crushMateriali() {
-    //crushFive();
-    //crushFour();
     crushThree();
     document.getElementById("score").innerText = score;
-
 }
 
 function crushThree() {
-    //check rows
+    //controlla righe
     for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < columns-2; c++) {
-            let candy1 = board[r][c];
-            let candy2 = board[r][c+1];
-            let candy3 = board[r][c+2];
-            if (candy1.src == candy2.src && candy2.src == candy3.src && !candy1.src.includes("blank")) {
-                candy1.src = "./images/blank.png";
-                candy2.src = "./images/blank.png";
-                candy3.src = "./images/blank.png";
-                score += 30;
+        for (let c = 0; c < columns - 2; c++) {
+            let materiale1 = board[r][c];
+            let materiale2 = board[r][c + 1];
+            let materiale3 = board[r][c + 2];
+
+            if (
+                materiale1.src === materiale2.src &&
+                materiale2.src === materiale3.src &&
+                !materiale1.src.includes("blank")
+            ) {
+                getMaterialScore(materiale1.src);
+                console.log(score)
+                document.getElementById("score").innerHTML = score
+                materiale1.src = "./images/blank.png";
+                materiale2.src = "./images/blank.png";
+                materiale3.src = "./images/blank.png";
             }
         }
     }
 
-    //check columns
+    // controlla colonne
     for (let c = 0; c < columns; c++) {
-        for (let r = 0; r < rows-2; r++) {
-            let candy1 = board[r][c];
-            let candy2 = board[r+1][c];
-            let candy3 = board[r+2][c];
-            if (candy1.src == candy2.src && candy2.src == candy3.src && !candy1.src.includes("blank")) {
-                candy1.src = "./images/blank.png";
-                candy2.src = "./images/blank.png";
-                candy3.src = "./images/blank.png";
-                score += 30;
+        for (let r = 0; r < rows - 2; r++) {
+            let materiale1 = board[r][c];
+            let materiale2 = board[r + 1][c];
+            let materiale3 = board[r + 2][c];
+
+            if (
+                materiale1.src === materiale2.src &&
+                materiale2.src === materiale3.src &&
+                !materiale1.src.includes("blank")
+            ) {
+                getMaterialScore(materiale1.src);
+                console.log(score)
+                document.getElementById("score").innerHTML = score
+                materiale1.src = "./images/blank.png";
+                materiale2.src = "./images/blank.png";
+                materiale3.src = "./images/blank.png";
             }
         }
     }
 }
 
+function getMaterialScore(material) {
+  console.log('f');
+
+  if (material === "./images/cartone.png") {
+      score += 2;
+  } else if (material === "./images/plastica.png") {
+    score += 3;
+  } else if (material === "./images/vetro.png") {
+    score += 5;
+  } else if (material === "./images/indifferenziata.png") {
+    score += 1;
+  } else {
+    score += 0;
+  }
+}
+
+
+
 function checkValid() {
-    //check rows
     for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < columns-2; c++) {
-            let candy1 = board[r][c];
-            let candy2 = board[r][c+1];
-            let candy3 = board[r][c+2];
-            if (candy1.src == candy2.src && candy2.src == candy3.src && !candy1.src.includes("blank")) {
+        for (let c = 0; c < columns - 2; c++) {
+            let materiale1 = board[r][c];
+            let materiale2 = board[r][c + 1];
+            let materiale3 = board[r][c + 2];
+
+            if (
+                materiale1.src === materiale2.src &&
+                materiale2.src === materiale3.src &&
+                !materiale1.src.includes("blank")
+            ) {
                 return true;
             }
         }
     }
 
-    //check columns
     for (let c = 0; c < columns; c++) {
-        for (let r = 0; r < rows-2; r++) {
-            let candy1 = board[r][c];
-            let candy2 = board[r+1][c];
-            let candy3 = board[r+2][c];
-            if (candy1.src == candy2.src && candy2.src == candy3.src && !candy1.src.includes("blank")) {
+        for (let r = 0; r < rows - 2; r++) {
+            let materiale1 = board[r][c];
+            let materiale2 = board[r + 1][c];
+            let materiale3 = board[r + 2][c];
+
+            if (
+                materiale1.src === materiale2.src &&
+                materiale2.src === materiale3.src &&
+                !materiale1.src.includes("blank")
+            ) {
                 return true;
             }
         }
@@ -177,11 +205,10 @@ function checkValid() {
     return false;
 }
 
-
 function slideMateriali() {
     for (let c = 0; c < columns; c++) {
         let ind = rows - 1;
-        for (let r = columns-1; r >= 0; r--) {
+        for (let r = rows - 1; r >= 0; r--) {
             if (!board[r][c].src.includes("blank")) {
                 board[ind][c].src = board[r][c].src;
                 ind -= 1;
@@ -194,8 +221,8 @@ function slideMateriali() {
     }
 }
 
-function generaMaterial() {
-    for (let c = 0; c < columns;  c++) {
+function generaMateriali() {
+    for (let c = 0; c < columns; c++) {
         if (board[0][c].src.includes("blank")) {
             board[0][c].src = "./images/" + randomMateriale() + ".png";
         }
