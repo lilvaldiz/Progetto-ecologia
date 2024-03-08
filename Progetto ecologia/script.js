@@ -22,7 +22,7 @@ function randomMateriale() {
 }
 
 function startGame() {
-    score = 0; // puntrggio 0
+    score = 0; // punteggio 0
     document.getElementById("score").innerText = score; 
 
     for (let r = 0; r < rows; r++) {
